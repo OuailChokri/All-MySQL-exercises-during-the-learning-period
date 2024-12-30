@@ -1,0 +1,193 @@
+1-Relation un à un (1:1) :
+
+-- Création de la table du MLD pour la relation un à un
+CREATE TABLE Table1 (
+    id INT PRIMARY KEY,
+    data VARCHAR(255),
+    foreign_key INT UNIQUE
+);
+
+CREATE TABLE Table2 (
+    foreign_key INT PRIMARY KEY,
+    data VARCHAR(255),
+    FOREIGN KEY (foreign_key) REFERENCES Table1(id)
+);
+
+2-Relation un à plusieurs (1:N) :
+
+-- Création de la table du MLD pour la relation un à plusieurs
+CREATE TABLE Table1 (
+    id INT PRIMARY KEY,
+    data VARCHAR(255)
+);
+
+CREATE TABLE Table2 (
+    id INT PRIMARY KEY,
+    data VARCHAR(255),
+    table1_id INT,
+    FOREIGN KEY (table1_id) REFERENCES Table1(id)
+);
+
+3-Relation plusieurs à plusieurs (N:N) avec une table de liaison :
+
+-- Création de la table du MLD pour la relation plusieurs à plusieurs
+CREATE TABLE Table1 (
+    id INT PRIMARY KEY,
+    data VARCHAR(255)
+);
+
+CREATE TABLE Table2 (
+    id INT PRIMARY KEY,
+    data VARCHAR(255)
+);
+
+CREATE TABLE Table1_Table2 (
+    table1_id INT,
+    table2_id INT,
+    PRIMARY KEY (table1_id, table2_id),
+    FOREIGN KEY (table1_id) REFERENCES Table1(id),
+    FOREIGN KEY (table2_id) REFERENCES Table2(id)
+);
+
+
+
+---------------------------------------------------------------
+EXERCICE 1 /:
+
+Exercice 1
+Soit la base de données d'un festival de musique : Dans une représentation peut participer un
+Soit la base de données relationnelle des vols quotidiens d'une compagnie aérienne qui contient les tables
+Avion, Pilote et Vol.
+Table Avion (NA: numéro avion de type entier (clé primaire). Nom: nom avion de type texte (12).
+Capacite: capacité avion de type entier, Localite ville de localité de l'avion de type texte (10))
+Table Pilote (NP: numéro pilote de type entier, Nom: nom du pilote de type texte (25), Adresse:
+adresse du pilote de type texte (40))
+Table Vol (NV: numéro de vol de type texte (6), NP: numéro de pilote de type entier, NA:
+numéro avion de type entier, VD: ville de départ de type texte (10), VA: ville d'arrivée de type texte (10).
+HD: heure de départ de type entier, HA: heure d'arrivée de type entier)
+1) Insérer les avions suivants dans la table Avion :
+(100, AIRBUS, 300, RABAT), (101.B737,250.CASA), (101, B737,220,RABAT)
+2) Afficher tous les avions
+3) Afficher tous les avions par ordre croissant sur le nom
+4) Afficher les noms et les capacités des avions
+5) Afficher les localités des avions sans redondance
+6) Afficher les avions dans la localité et Rabat ou Casa
+7) Modifier la capacité de l'avion numéro 101, la nouvelle capacité et 220
+8) Supprimer les avions dans la capacité et inférieure à 200
+9) Afficher la capacité maximale, minimale, moyenne des avions
+10) Afficher les données des avions dont la capacité et la plus basse
+11) Afficher les données des avions dont la capacité et supérieure à la capacité moyenne
+12) Afficher le nom et l'adresse des pilotes assurant les vols IT100 et IT104
+13) Afficher les numéros des pilotes qui sont en service
+14) Afficher les numéros des pilotes qui ne sont pas en service
+15) Afficher les noms des pilotes qui conduisent un AIRBUS
+
+----------------------
+CORRECTION // :
+
+Pour créer les tables dans MySQL, vous pouvez utiliser la syntaxe suivante :
+
+sql
+Copy code
+-- Table Avion
+CREATE TABLE Avion (
+  NA INT PRIMARY KEY,
+  Nom VARCHAR(12),
+  Capacite INT,
+  Localite VARCHAR(10)
+);
+
+-- Table Pilote
+CREATE TABLE Pilote (
+  NP INT PRIMARY KEY,
+  Nom VARCHAR(25),
+  Adresse VARCHAR(40)
+);
+
+-- Table Vol
+CREATE TABLE Vol (
+  NV VARCHAR(6),
+  NP INT,
+  NA INT,
+  VD VARCHAR(10),
+  VA VARCHAR(10),
+  HD INT,
+  HA INT,
+  PRIMARY KEY (NV),
+  FOREIGN KEY (NP) REFERENCES Pilote(NP),
+  FOREIGN KEY (NA) REFERENCES Avion(NA)
+);
+Maintenant, vous pouvez insérer les avions dans la table Avion en utilisant la commande INSERT :
+
+sql
+Copy code
+INSERT INTO Avion (NA, Nom, Capacite, Localite)
+VALUES
+  (100, 'AIRBUS', 300, 'RABAT'),
+  (101, 'B737', 250, 'CASA'),
+  (102, 'B737', 220, 'RABAT');
+Voici les réponses aux différentes questions :
+
+Afficher tous les avions :
+sql
+Copy code
+SELECT * FROM Avion;
+Afficher tous les avions par ordre croissant sur le nom :
+sql
+Copy code
+SELECT * FROM Avion ORDER BY Nom;
+Afficher les noms et les capacités des avions :
+sql
+Copy code
+SELECT Nom, Capacite FROM Avion;
+Afficher les localités des avions sans redondance :
+sql
+Copy code
+SELECT DISTINCT Localite FROM Avion;
+Afficher les avions dans la localité 'RABAT' ou 'CASA' :
+sql
+Copy code
+SELECT * FROM Avion WHERE Localite IN ('RABAT', 'CASA');
+Modifier la capacité de l'avion numéro 101, la nouvelle capacité étant 220 :
+sql
+Copy code
+UPDATE Avion SET Capacite = 220 WHERE NA = 101;
+Supprimer les avions ayant une capacité inférieure à 200 :
+sql
+Copy code
+DELETE FROM Avion WHERE Capacite < 200;
+Afficher la capacité maximale, minimale et moyenne des avions :
+sql
+Copy code
+SELECT MAX(Capacite), MIN(Capacite), AVG(Capacite) FROM Avion;
+Afficher les données des avions ayant la capacité la plus basse :
+sql
+Copy code
+SELECT * FROM Avion WHERE Capacite = (SELECT MIN(Capacite) FROM Avion);
+Afficher les données des avions ayant une capacité supérieure à la capacité moyenne :
+sql
+Copy code
+SELECT * FROM Avion WHERE Capacite > (SELECT AVG(Capacite) FROM Avion);
+Afficher le nom et l'adresse des pilotes assurant les vols 'IT100' et 'IT104' :
+sql
+Copy code
+SELECT Pilote.Nom, Pilote.Adresse
+FROM Pilote
+JOIN Vol ON Pilote.NP = Vol.NP
+WHERE Vol.NV IN ('IT100', 'IT104');
+Afficher les numéros des pilotes qui sont en service :
+sql
+Copy code
+SELECT DISTINCT NP FROM Vol;
+Afficher les numéros des pilotes qui ne sont pas en service :
+sql
+Copy code
+SELECT NP FROM Pilote WHERE NP NOT IN (SELECT DISTINCT NP FROM Vol);
+Afficher les noms des pilotes qui conduisent un avion de marque 'AIRBUS' :
+sql
+Copy code
+SELECT Pilote.Nom
+FROM Pilote
+JOIN Vol ON Pilote.NP = Vol.NP
+JOIN Avion ON Vol.NA = Avion.NA
+WHERE Avion.Nom = 'AIRBUS';

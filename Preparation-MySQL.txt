@@ -1,0 +1,694 @@
+Les fonctions : 
+
+I - 
+
+use preparation;
+/*
+drop function if exists uf_nombre_client_par_ville;
+DELIMITER $$
+create function uf_nombre_client_par_ville (ville varchar(50))
+returns int
+reads sql data
+begin
+declare nombre int;
+set nombre =(select count(*) from clients where adresse = ville);
+return nombre;
+end $$
+DELIMITER ;
+*/
+
+select uf_nombre_client_par_ville('casa');
+
+
+II - 
+
+1 / :
+use preparation;
+
+
+drop function if exists uf_nom_par_code;
+DELIMITER $$
+
+create function uf_nom_par_code(codeEtudiant int)
+returns varchar(50)
+reads sql data 
+begin
+declare nomEtudiant varchar(50);
+set nomEtudiant = (select nom from etudiants where codeE = codeEtudiant);
+return nomEtudiant;
+end $$
+DELIMITER ;
+
+
+select uf_nom_par_code(3);
+
+2 /:
+
+select avg(age) from etudiants;
+
+3 /:
+
+
+use preparation;
+
+/*
+drop function if exists uf_avg_age_par_ville;
+DELIMITER $$
+
+create function uf_avg_age_par_ville (ville varchar(50))
+returns int
+reads sql data
+begin 
+declare moyenne int;
+set moyenne = (select avg(age) from users where adresse = ville);
+return moyenne ;
+end $$
+DELIMITER ;
+*/
+
+select uf_avg_age_par_ville('nador');
+
+
+
+Les procedure : 
+
+I - avec : in
+
+use preparation;
+
+drop procedure if exists sp_nom_par_code;
+DELIMITER $$
+create procedure sp_nom_par_code(in codeEtudiant int)
+begin
+select nom from etudiants where codeE = codeEtudiant;
+end $$
+DELIMITER ;
+
+
+call sp_nom_par_code(3);
+
+
+II - avec : in , out
+
+
+use preparation;
+
+drop procedure if exists sp_nom_par_code;
+DELIMITER $$
+create procedure sp_nom_par_code(in codeEtudiant int, out nom varchar(50))
+begin
+set nom = (select nom from etudiants where codeE = codeEtudiant);
+end $$
+DELIMITER ;
+
+call sp_nom_par_code(1,@nom);
+select @nom;
+
+
+
+III - exercice procedure creation des table : 
+
+
+use preparation;
+/*
+1 - creer un procedure qui creer les table : 
+
+drop procedure if exists create_tables;
+delimiter $$
+create procedure create_table()
+begin
+drop table if exists Personne;
+create table Personne(
+   nump int primary key,
+   nomp varchar(35),
+   prenomp varchar(12),
+   villep varchar(50)
+);
+drop table if exists voiture;
+create table Voiture (
+   matricule varchar(15) primary key,
+   modele varchar (20),
+   annee char(4),
+   nump int references Personne(nump)
+);
+drop table if exists Voyage;
+create table Voyage (
+   nump int references Personne(nump),
+   matricule varchar(50) references Voiture(matricule),
+   ville varchar(12),
+   primary key (nump,matricule)
+);
+end $$
+delimiter ;
+call create_table();
+*/
+/*
+2 - inserer les donnees sur la table voyage en utilise procedure : 
+delimiter $$
+create procedure ajouterVoyage(nump int,matricule varchar(15),ville varchar(50))
+begin
+insert into voyage values (nump,matricule,ville);
+end $$
+delimiter ;
+*/
+/*
+
+3- creer une fonction qui chercher les nombre de voiture d'une personne sachant le numero de personne : 
+DROP FUNCTION IF EXISTS uf_nombre_voiture_par_numero_personne;
+DELIMITER $$
+CREATE FUNCTION uf_nombre_voiture_par_numero_personne(numero INT)
+RETURNS INT
+READS SQL DATA
+BEGIN
+    DECLARE nombreV INT;
+    SET nombreV = (SELECT COUNT(*) FROM Voiture WHERE nump = numero);
+    RETURN nombreV;
+END $$
+DELIMITER ;
+select uf_nombre_voiture_par_numero_personne(1);
+*/
+
+
+IIII- 
+
+1: creer une procedure qui chercher les note de stagiaire par idstagiaire : 
+
+use preparation;
+
+drop procedure if exists sp_note_par_ids;
+delimiter $$
+create procedure sp_note_par_ids(in idstagiaire int)
+begin
+select note from Notation where ids = idstagiaire;
+end $$
+delimiter ;
+
+2 - creer une procedure qui calculer la moyenne des note pour chaque module pour un stagiaire donne : 
+
+drop procedure if exists sp_note_chaque_module_par_ids;
+delimiter $$
+create procedure sp_note_chaque_module_par_ids(in idstagiaire int)
+begin 
+select idm,avg(note) from Notation where ids = idstagiaire group by idm;
+end $$
+delimiter ;
+
+
+3 - creer une procedure qui calcule la moyenne des note pour chaque module et stocke sur une table
+tomporaire nommes moyenneModule : 
+
+drop procedure if exists sp_note_chaque_module_par_ids;
+delimiter $$
+create procedure sp_note_chaque_module_par_ids(in idstagiaire int)
+begin 
+drop temporary table if exists moyenneModule;
+create temporary table moyenneModule select idm,avg(note) as moyenne from Notation where ids = idstagiaire group by idm;
+end $$
+delimiter ;
+
+call  sp_note_chaque_module_par_ids(1);
+select * from moyenneModule;
+
+
+4 - calculer moyenne des note de chaque module stocke sur la table moyenneModule;
+
+drop function if exists uf_moyenne_final;
+delimiter $$
+create function uf_moyenne_final(ids int) 
+returns float
+reads sql data
+begin 
+declare resultat float;
+call sp_note_chaque_module_par_ids(ids);
+set resultat = (select avg(moyenne) from moyenneModule);
+return resultat;
+end $$
+delimiter ;
+
+
+IIII - 
+
+1 - Les conditions : 
+
+DROP FUNCTION IF EXISTS uf_reaction_par_age;
+DELIMITER $$
+CREATE FUNCTION uf_reaction_par_age(v_age INT)
+RETURNS VARCHAR(50)
+READS SQL DATA
+BEGIN
+    DECLARE v_reaction VARCHAR(50);
+
+    IF v_age < 18 THEN
+        SET v_reaction = 'mineur';
+    -- Ajout d'un cas pour l'âge égal à 18
+    ELSEIF v_age = 18 THEN
+        SET v_reaction = 'limite';
+    ELSE 
+        SET v_reaction = 'majeur';
+    END IF;
+
+    RETURN v_reaction;
+END $$
+DELIMITER ;
+
+
+2 - switch case avec sans selecteur : 
+
+use preparation;
+select nom,adresse, case 
+when age < 30 then 'accepted'
+when age >= 30 then 'refused'
+end
+from users;
+
+
+
+
+
+
+
+
+TP 1 : 
+
+use TesterTable;
+/* ex 1 : 
+CREATE TABLE Personne (
+   nump INT PRIMARY KEY,
+   nomp VARCHAR(50),
+   prenomp VARCHAR(50),
+   age INT
+);
+
+CREATE TABLE Voiture (
+   matricule VARCHAR(55) PRIMARY KEY,
+   modele VARCHAR(50),
+   annee DATE,
+   nump INT,
+   FOREIGN KEY (nump) REFERENCES Personne(nump)
+);
+
+CREATE TABLE Voyage (
+   ville VARCHAR(50),
+   datev DATE,
+   nump INT,
+   matricule VARCHAR(55),
+   FOREIGN KEY (nump) REFERENCES Personne(nump),
+   FOREIGN KEY (matricule) REFERENCES Voiture(matricule)
+);
+
+-- Insert into Personne table
+INSERT INTO Personne (nump, nomp, prenomp, age) VALUES 
+(1, 'Dupont', 'Jean', 30),
+(2, 'Smith', 'John', 35);
+
+-- Insert into Voiture table
+INSERT INTO Voiture (matricule, modele, annee, nump) VALUES 
+('ABC123', 'Toyota', '2020-01-01', 1),
+('DEF456', 'Honda', '2019-05-01', 2);
+
+-- Insert into Voyage table
+INSERT INTO Voyage (ville, datev, nump, matricule) VALUES 
+('Paris', '2024-05-10', 1, 'ABC123'),
+('London', '2024-05-11', 2, 'DEF456');
+*/
+
+
+/*
+ex 2 :
+drop function if exists uf_nombre_personne;
+delimiter $$
+create function uf_nombre_personne()
+returns int 
+reads sql data
+begin
+declare nombreLign int;
+declare res int;
+set nombreLign = (select count(*) from Personne);
+if nombreLign < 10 then
+   set res = 0;
+else
+   set res = 1;
+end if;
+return res;
+end $$
+delimiter ;
+
+
+select uf_nombre_personne();
+
+*/
+
+/*
+ex 3 :
+drop procedure if exists sp_insertion_avec_appele_fonction;
+delimiter $$
+create procedure sp_insertion_avec_appele_fonction(numPersonne int, nomPersonne varchar(50), prenomPersonne varchar(50), agePersonne int)
+begin
+declare nombrePersonne int; 
+declare message varchar(50);
+set nombrePersonne = (select uf_nombre_personne());
+if nombrePersonne = 1 then 
+   insert into Personne (nump, nomp, prenomp, age) values (numPersonne,nomPersonne,prenomPersonne,agePersonne);
+else 
+   set message = 'table plein';
+end if;
+   select message ;
+end $$
+delimiter ;
+call sp_insertion_avec_appele_fonction(12,'ouail','chokri',20);
+*/
+
+/*
+ex : 4 
+drop procedure if exists ajouterVoiture;
+delimiter $$
+create procedure ajouterVoiture(matriculeV varchar(50),modeleV varchar(50),anneeV varchar(50),numpV int)
+begin
+declare agePersonne int;
+declare message varchar(50);
+set agePersonne = (select age from Personne where nump = numpV);
+if agePersonne >= 18 then 
+   insert into Voiture values(matriculeV,modeleV,anneeV,numpV);
+else 
+    set message = 'Lajoute annuler';
+end if;
+    select message;
+end $$
+delimiter ;
+call ajouterVoiture('A100','hundai','2022-01-01',1);
+*/
+
+
+
+
+
+
+TRIGGER /: 
+
+/*
+exemple 1 : trigger
+drop trigger if exists trigger_age;
+delimiter $$
+create trigger trigger_age before insert on Personne for each row
+begin
+if new.age < 18 then
+  signal sqlstate '50001' set message_text = "la personne doit etre age de plus de 18";
+end if;
+end $$
+delimiter ;
+insert into Personne values(5,'Khalid','Karam',17);
+select * from Personne;
+*/
+
+/*select date_sub(curdate(),interval 20 year);*/
+
+/*
+exemple 2 : trigger pour archiver l'utilisateur avant de la suppression
+drop trigger if exists trigger_archive;
+delimiter $$
+create trigger trigger_archive before delete on user for each row
+begin
+insert into userarchive(nom, age) values(old.nom,old.age);
+end $$
+delimiter ;
+delete from user where id = 2;
+select * from user;
+select * from userarchive;
+*/
+
+/*
+notice : 
+utilisation de new,old : 
+insertion : new
+update : new,old
+delete : old
+*/
+
+
+/*
+create table ProduitFini(
+  codePdtFini int primary key,
+  nomPdt varchar(50),
+  qtiteStock int
+);
+
+create table Mouvement (
+   numMvt int primary key,
+   typeM varchar(50),
+   quantiteM int,
+   codePdtFini int,
+   foreign key (codePdtFini) references ProduitFini(codePdtFini)
+);
+
+create table Fournisseur(
+  raisonSociale varchar(50) primary key,
+  adrFournisseur varchar(50),
+  nbrProduitsFournis int default 0
+);
+create table ProduitBrut(
+  codePdtBrut int primary key,
+  nomPdtBrut varchar(50),
+  pAchat varchar(50),
+  raisonSociale varchar(50),
+  foreign key (raisonSociale) references Fournisseur(raisonSociale)
+);
+create table Composition(
+  codePdtFini int,
+  codePdtBrut int,
+  qtiteUtilise int,
+  foreign key (codePdtFini) references ProduitFini(codePdtFini),
+  foreign key (codePdtBrut) references ProduitBrut(codePdtBrut),
+  primary key(codePdtFini,codePdtBrut)
+);
+*/
+
+
+/*
+ex 1 : 
+
+drop trigger if exists trigger_increment;
+delimiter $$
+create trigger trigger_increment after insert on ProduitBrut for each row
+begin
+update Fournisseur
+set nbrProduitsFournis = nbrProduitsFournis + 1 
+where raisonSociale = new.raisonSociale;
+end $$
+delimiter ;
+
+INSERT INTO ProduitBrut (codePdtBrut, nomPdtBrut, pAchat, raisonSociale) VALUES (4, 'Produit Brut Z', '15.00', 'Fournisseur A');
+select * from Fournisseur;
+select * from ProduitBrut;
+*/
+
+/*
+ex 2-1 :
+drop trigger if exists trigger_decrement_after_update;
+delimiter $$
+create trigger trigger_decrement_after_update after update on ProduitBrut for each row
+begin
+update Fournisseur
+set nbrProduitsFournis = nbrProduitsFournis - 1 
+where raisonSociale = old.raisonSociale;
+end $$
+delimiter ;
+*/
+
+/*
+ex 2-2 : 
+
+drop trigger if exists trigger_decrement_after_delete;
+delimiter $$
+create trigger trigger_decrement_after_delete after delete on ProduitBrut for each row
+begin
+update Fournisseur
+set nbrProduitsFournis = nbrProduitsFournis - 1 
+where raisonSociale = old.raisonSociale;
+end $$
+delimiter ;
+*/
+
+
+CURSOR // :
+
+
+exemple 1 : 
+
+use testertable;
+
+drop procedure if exists p5;
+delimiter $$
+create procedure p5()
+begin
+declare finished int default 0;
+declare nomE varchar(50);
+declare ageE int;
+declare info,resultats varchar(500);
+
+declare cur1 cursor for select nom,age from employe;
+declare continue handler for not found set finished = 1;
+open cur1;
+set resultats = '';
+label_loop : loop
+fetch cur1 into nomE,ageE;
+if finished = 1 then
+leave label_loop;
+end if;
+set info = concat(nomE,',',ageE,' ');
+set resultats = concat(resultats,'-',info);
+end loop;
+close cur1;
+select resultats;
+end $$
+delimiter ;
+
+call p5;
+
+
+
+exemple 2 : USE testertable;
+
+DROP PROCEDURE IF EXISTS sp_total_montant_par_nom;
+DELIMITER $$
+
+CREATE PROCEDURE sp_total_montant_par_nom(in idC int)
+BEGIN
+    DECLARE finished INT DEFAULT 0;
+    DECLARE montant INT;
+    DECLARE montant_total INT DEFAULT 0;
+
+    DECLARE cur1 CURSOR FOR 
+        SELECT montant FROM commands WHERE id = idC;
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished = 1;
+
+    OPEN cur1;
+
+    read_loop: LOOP
+        FETCH cur1 INTO montant;
+
+        IF finished THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET montant_total = montant_total + montant;
+    END LOOP;
+
+    CLOSE cur1;
+
+    SELECT montant_total;
+END$$
+
+DELIMITER ;
+
+CALL sp_total_montant_par_nom(1);
+
+
+
+
+EXCEPTION /// :
+
+
+exemple 1 : use testerTable;
+/*
+select * from employe;
+drop procedure if exists sp_exp;
+delimiter $$
+create procedure sp_exp(idE int,nomE varchar(50),ageE int)
+begin
+declare err int default 0;
+begin
+declare exit handler for 1048 set err = 1;
+insert into employe values(idE,nomE,ageE);
+select 'insertion success';
+end;
+if err = 1 then
+select 'ereur lorsque linsertion dune value null';
+end if;
+end $$
+delimiter ;
+call sp_exp(6,null,19);
+*/
+
+
+/*  
+
+exemple 2 : 
+drop procedure if exists sp_chercher_employe_par_nom;
+delimiter $$
+create procedure sp_chercher_employe_par_nom(in nomE varchar(50))
+begin
+declare flagNotFound int default 0;
+declare infoEmploye varchar(50);
+begin 
+declare exit handler for not found set flagNotFound = 1;
+set infoEmploye = (select nom from employe where nom = nomE);
+end;
+if flagNotFound = 1 then
+select 'le employe not found';
+else 
+select 'la recherche et bien';
+end if ;
+    SELECT infoEmploye;
+end $$
+delimiter ;
+
+call sp_chercher_employe_par_nom('ouail');
+
+
+
+EXCEPTION / / :
+
+
+/*
+select * from employe;
+drop procedure if exists sp_exp;
+delimiter $$
+create procedure sp_exp(idE int,nomE varchar(50),ageE int)
+begin
+declare err int default 0;
+begin
+declare exit handler for 1048 set err = 1;
+insert into employe values(idE,nomE,ageE);
+select 'insertion success';
+end;
+if err = 1 then
+select 'ereur lorsque linsertion dune value null';
+end if;
+end $$
+delimiter ;
+call sp_exp(6,null,19);
+*/
+
+/*  
+
+exemple 2 : 
+drop procedure if exists sp_chercher_employe_par_nom;
+delimiter $$
+create procedure sp_chercher_employe_par_nom(in nomE varchar(50))
+begin
+declare flagNotFound int default 0;
+declare infoEmploye varchar(50);
+begin 
+declare exit handler for not found set flagNotFound = 1;
+set infoEmploye = (select nom from employe where nom = nomE);
+end;
+if flagNotFound = 1 then
+select 'le employe not found';
+else 
+select 'la recherche et bien';
+end if ;
+    SELECT infoEmploye;
+end $$
+delimiter ;
+
+call sp_chercher_employe_par_nom('ouail');
+
+
+
+
+
+
+
+
+
